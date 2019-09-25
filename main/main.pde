@@ -10,10 +10,10 @@ import java.awt.MouseInfo;
 import java.awt.Frame;
 import javafx.scene.canvas.Canvas;
 
-static final String RENDERER = FX2D;  //FX2D, JAVA2D, P2D ou P3D (only p2d/p3d working correctly)
+static final String RENDERER = P2D;  //FX2D, JAVA2D, P2D ou P3D (only p2d/p3d working correctly)
  
 static final int WINDOW_WIDTH = 800, WINDOW_HEIGHT = 600;
-static final int FPS = 60, FREQ = (1<<5) - 1;
+static final int FPS = 20, FREQ = (1<<5) - 1;
 static final double WINDOW_SPEED = 10.0;  //pixels per frame
 
 
@@ -24,28 +24,45 @@ void setup(){
   surface.setTitle("minha janela");
   surface.setResizable(false);
   frameRate(FPS);
+  noStroke();
+  colorMode(RGB, 255);
 }
 
  
 void settings() {
   size(WINDOW_WIDTH, WINDOW_HEIGHT, RENDERER);
-  smooth(4);
+  smooth(8);
+  
 
   //thread("repositionCanvas");
 }
 int i=0;
 void draw() {
+  background(0);
   updateMyMouse();
   
   print("\nX - Y = " + get_sketch_location_x() + " - " + get_sketch_location_y()+"\tline "+(i++));
   println("mouse pos: "+myMouse.x+", "+myMouse.y);
   repositionWindow();
   
+  Point[] star = new Point[5];
+  for(int i=0; i<star.length; i++){
+    if(i>0) star[i] = star[i-1]; //<>//
+    int shineLayers = 3;
+    for(int k=0; k < shineLayers; k++){
+      fill(255, 255, 0, (255*0.3)/(k+1));
+      int size = (int)( ( (double)(50*(k+1) ) * ( (double)i/star.length) ) );
+      ellipse(myMouse.x, myMouse.y, size, size);
+    }
+    
+  }
+  star[0] = new Point(myMouse);
   
 }
 
 void repositionWindow(){
-  int topBar=0; //<>//
+  
+  int topBar=0;
   if(RENDERER.equals(JAVA2D))topBar = getJFrame(getSurface()).getInsets().top;
   if(RENDERER.equals(FX2D))  topBar = (int) ( getFxWindow(getSurface()).getHeight() - ((Canvas) surface.getNative()).getScene().getHeight() );
   
@@ -70,7 +87,7 @@ void repositionWindow(){
   
   if(moveWindow){
     if(RENDERER.equals(P2D))   get_window(surface).setPosition(newX, newY);
-    if(RENDERER.equals(JAVA2D))getJFrame(getSurface()).setLocation(newX, newY);  //para JAVA2D //<>//
+    if(RENDERER.equals(JAVA2D))getJFrame(getSurface()).setLocation(newX, newY);  //para JAVA2D
     if(RENDERER.equals(FX2D)){ getFxWindow(getSurface()).setX(newX); getFxWindow(getSurface()).setY(newY); }  //para JAVA2D
     
     println("\tmoving window to: "+newX+" , "+newY); 
