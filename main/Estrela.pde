@@ -1,7 +1,8 @@
 //inspirado em https://processing.org/examples/animatedsprite.html
 public class Estrela extends Figura{
+  private int width=0, height=0;
   PImage[] frames;
-  static final int totalFrames = 8 ;
+  static public final int totalFrames = 8 ;
   int frame = 0;
   static final String filePrefix = "data/start blinking-";
   
@@ -14,6 +15,8 @@ public class Estrela extends Figura{
     for (int i = 0; i < totalFrames; i++) {
       String filename = filePrefix + nf(i+1, 1) + ".png";
       frames[i] = loadImage(filename);
+      width = Math.max(width,frames[i].width);
+      height = Math.max(height,frames[i].height);
     } //<>//
   }
 
@@ -21,7 +24,10 @@ public class Estrela extends Figura{
   public void draw(){
     if(frameCount % (FPS/frames.length) == 0)
       frame = ++frame % frames.length;
-    image(frames[frame], getX(), getY());
+    image(frames[frame], super.origem.x + getX(), super.origem.y + getY());
   }
+  
+  public int getWidth(){ return this.width; }
+  public int getHeight(){ return this.height; }
   
 }

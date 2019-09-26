@@ -6,17 +6,19 @@ import javafx.scene.canvas.Canvas;
 
 static final String RENDERER = P2D;  //FX2D, JAVA2D, P2D ou P3D (only p2d/p3d working correctly)
 static final int WINDOW_WIDTH = 800, WINDOW_HEIGHT = 600;
-static final int FPS = 60;
-static final double WINDOW_SPEED = Math.pow(1.0/(double)FPS, 1.5);  // per frame
+static final int FPS = 120;
+static final double WINDOW_SPEED = Math.pow(1.0/(double)FPS, 1.2);  // per frame
 final Util UTIL = new Util();
 Point ORIGEM_TELA = new Point(0, 0);
 
 
 Point myMouse = new Point();
 Figura[][] casas = new Figura[5][25];
-Estrela[] estrelas = new Estrela[100];
+Estrela[] estrelas = new Estrela[150];
 Point[] star = new Point[FPS];
 PImage[] sStar = new PImage[7];
+
+PImage fundo = new PImage();
 
 
 void setup() {
@@ -36,9 +38,12 @@ void setup() {
     String filename = "shooting star-" + nf(i, 1) + ".png";
     sStar[i] = loadImage(filename);
   }
-  
-  for (int i=0; i< estrelas.length; i++) { 
+  fundo = loadImage("data/fundoPredios.png");
+  for (int i=0; i< estrelas.length; i++) { //<>//
     estrelas[i] = new Estrela((int)random(0,8));
+    estrelas[i].setPontoOrigem(ORIGEM_TELA);
+    estrelas[i].setX( (int)random(-estrelas[i].getWidth(), displayWidth+estrelas[i].getWidth()) );
+    estrelas[i].setY( (int)random(-estrelas[i].getHeight(), displayHeight+estrelas[i].getHeight()) );
   }
   for (int i=0; i < casas.length; i++) {
     int rowMiddle = (displayHeight/casas.length)*(i+1);
@@ -69,13 +74,15 @@ void draw() {
     pWindowX = get_sketch_location_x();
     pWindowY = get_sketch_location_y();
   }
-  //background(0);
   color bcolor1 = color(8, 10, 41);  //lerpColor(bcolor1, bcolor2, pWindowX)
   color bcolor2 = color(49, 57, 152);  //color(47,52,118);
   UTIL.setGradient(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, 
     lerpColor(bcolor1, bcolor2, (float)pWindowY/(float)displayHeight), 
     lerpColor(bcolor1, bcolor2, (float)(pWindowY+WINDOW_HEIGHT)/(float)displayHeight), 
     'y');
+  
+  desenhaPredios();
+  
 
   updateMyMouse();
   repositionWindow();
@@ -83,7 +90,14 @@ void draw() {
   //print("\nX - Y = " + get_sketch_location_x() + " - " + get_sketch_location_y());
   //print("############ MOUSE pos: "+myMouse.x+", "+myMouse.y);
 
+  for(Estrela e : estrelas) {
+    if(frameCount % (FPS/e.totalFrames) == 0){
+      e.setX(e.getX()+(int)random(-5,5));
+      e.setY(e.getY()+(int)random(-5,5));
+    }
 
+    e.draw();
+  }
 
 
   for(Figura[] row : casas) {
@@ -92,22 +106,24 @@ void draw() {
     }
   }
   
-  estrelas[0].draw();
+ 
   drawShootingStar();
 
 
-
+  //cauda da estrela cadente
   noStroke();
   for (int i=0; i<star.length; i++) {
 
-    if (i+1 < star.length) {
-      star[star.length-i-1] = new Point(star[star.length-i-2]);
-      star[star.length-i-1].y +=1;
+    if(frameCount%2==0){
+      if (i+1 < star.length) {
+        star[star.length-i-1] = new Point(star[star.length-i-2]);
+        star[star.length-i-1].y +=1;  //faz ela cair um pouco por frame
+      }
     }
 
     int shineLayers = 4;
     for (int k=0; k < shineLayers; k++) {
-      double satBase = 1.0 - ((double)i/(double)star.length);
+      double satBase = Math.pow(1.0 - ((double)i/(double)star.length), 1.7);
       double sat = satBase*(255*0.2) / (2*(k+1));
       int size = (int)( ( (double)(50*(k+1) ) * ( (double)i/star.length) ) );
 
@@ -119,6 +135,10 @@ void draw() {
 }
 
 
+void desenhaPredios(){
+  imageMode(CENTER);
+  image(fundo, ORIGEM_TELA.x + displayWidth/2, ORIGEM_TELA.y + displayHeight/2);
+}
 
 
 int pWindowX = -1, pWindowY = -1;

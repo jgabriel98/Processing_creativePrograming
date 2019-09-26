@@ -28,6 +28,7 @@ public class Casa extends Figura{
     int y = position.y + super.origem.y;
     int yBase = y - altura/2;
     int yTeto = y - altura/2;
+    /*
     strokeJoin(ROUND);
     strokeWeight(2);
     stroke(0);
@@ -38,8 +39,7 @@ public class Casa extends Figura{
     triangle(x - (largura/2), yTeto, 
              x              , yTeto - alturaTelhado,
              x + (largura/2), yTeto);
-     
-     
+             */
      
   }
 
