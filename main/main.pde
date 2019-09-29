@@ -4,21 +4,23 @@ import java.awt.MouseInfo;
 import java.awt.Frame;
 import javafx.scene.canvas.Canvas;
 
-static final String RENDERER = P2D;  //FX2D, JAVA2D, P2D ou P3D (only p2d/p3d working correctly)
+static final String RENDERER = JAVA2D;  //FX2D, JAVA2D, P2D ou P3D (only p2d/p3d working correctly)
 static final int WINDOW_WIDTH = 800, WINDOW_HEIGHT = 600;
-static final int FPS = 120;
-static final double WINDOW_SPEED = Math.pow(1.0/(double)FPS, 1.2);  // per frame
+static final int FPS = 60;
+static final double WINDOW_SPEED = Math.pow(1.0/(double)FPS, 1.5);  // per frame
 final Util UTIL = new Util();
-Point ORIGEM_TELA = new Point(0, 0);
+Point ORIGEM_TELA;
 
 
 Point myMouse = new Point();
 Figura[][] casas = new Figura[5][25];
 Estrela[] estrelas = new Estrela[150];
-Point[] star = new Point[FPS];
+Point[] starTail = new Point[FPS];
 PImage[] sStar = new PImage[7];
 
 PImage fundo = new PImage();
+color[][] aslfatoTexturePixels;
+
 
 
 void setup() {
@@ -30,16 +32,37 @@ void setup() {
   colorMode(RGB, 255);
   imageMode(CENTER);
   //pixelDensity(1);
+  
+  
+  //inicializando variaveis;
+  
+  ORIGEM_TELA = new Point(-get_sketch_location_x(), -get_sketch_location_y());
+  pWindowX = get_sketch_location_x();
+  pWindowY = get_sketch_location_y();
+  
 
-  for (int i=0; i< star.length; i++) { 
-    star[i] = new Point();
+  
+
+  for (int i=0; i< starTail.length; i++) { 
+    starTail[i] = new Point();
   }
   for (int i = 0; i < sStar.length; i++) {
     String filename = "shooting star-" + nf(i, 1) + ".png";
     sStar[i] = loadImage(filename);
   }
+  
   fundo = loadImage("data/fundoPredios.png");
-  for (int i=0; i< estrelas.length; i++) { //<>//
+  /* ficou super lento
+  int quadHeight = (int)(fundo.height*0.30);
+  aslfatoTexturePixels = new color[quadHeight][displayWidth];
+  for(int x=0; x<displayWidth; x++){
+   for(int y=0; y<quadHeight;y++){
+     float noiseScale = 0.02;
+     color c = (int)noise(x*noiseScale,y*noiseScale)*255;
+     aslfatoTexturePixels[y][x] = c;
+   }
+  }*/
+  for (int i=0; i< estrelas.length; i++) {
     estrelas[i] = new Estrela((int)random(0,8));
     estrelas[i].setPontoOrigem(ORIGEM_TELA);
     estrelas[i].setX( (int)random(-estrelas[i].getWidth(), displayWidth+estrelas[i].getWidth()) );
@@ -62,34 +85,43 @@ void setup() {
 
 void settings() {
   size(WINDOW_WIDTH, WINDOW_HEIGHT, RENDERER);
+  //fullScreen(RENDERER);
   smooth(8);
   //thread("repositionCanvas");
+  
 }
 
 
 
 
 void draw() {
-  if (pWindowX == -1) {
-    pWindowX = get_sketch_location_x();
-    pWindowY = get_sketch_location_y();
-  }
+  updateMyMouse();
+  repositionWindow();
+  
+  desenhaCeu();  //desenha o fundo
+
+  desenhaAsfalto();
+  desenhaPredios();
+  drawShootingStar();
+
+
+
+  pWindowX = get_sketch_location_x(); 
+  pWindowY = get_sketch_location_y();
+}
+
+void desenhaCeu(){
   color bcolor1 = color(8, 10, 41);  //lerpColor(bcolor1, bcolor2, pWindowX)
   color bcolor2 = color(49, 57, 152);  //color(47,52,118);
   UTIL.setGradient(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, 
     lerpColor(bcolor1, bcolor2, (float)pWindowY/(float)displayHeight), 
     lerpColor(bcolor1, bcolor2, (float)(pWindowY+WINDOW_HEIGHT)/(float)displayHeight), 
     'y');
-  
-  desenhaPredios();
-  
+    
+  desenhaEstrelas();
+}
 
-  updateMyMouse();
-  repositionWindow();
-
-  //print("\nX - Y = " + get_sketch_location_x() + " - " + get_sketch_location_y());
-  //print("############ MOUSE pos: "+myMouse.x+", "+myMouse.y);
-
+void desenhaEstrelas(){
   for(Estrela e : estrelas) {
     if(frameCount % (FPS/e.totalFrames) == 0){
       e.setX(e.getX()+(int)random(-5,5));
@@ -98,42 +130,26 @@ void draw() {
 
     e.draw();
   }
-
-
-  for(Figura[] row : casas) {
-    for(Figura casa: row){
-      //casa.draw();
-    }
-  }
-  
- 
-  drawShootingStar();
-
-
-  //cauda da estrela cadente
-  noStroke();
-  for (int i=0; i<star.length; i++) {
-
-    if(frameCount%2==0){
-      if (i+1 < star.length) {
-        star[star.length-i-1] = new Point(star[star.length-i-2]);
-        star[star.length-i-1].y +=1;  //faz ela cair um pouco por frame
-      }
-    }
-
-    int shineLayers = 4;
-    for (int k=0; k < shineLayers; k++) {
-      double satBase = Math.pow(1.0 - ((double)i/(double)star.length), 1.7);
-      double sat = satBase*(255*0.2) / (2*(k+1));
-      int size = (int)( ( (double)(50*(k+1) ) * ( (double)i/star.length) ) );
-
-      fill(255, 255, 0, (int)sat );
-      ellipse(star[i].x, star[i].y, size, size);
-    }
-  }
-  star[0] = myMouse;
 }
 
+void desenhaAsfalto(){
+  
+  /*
+  //ficou super lento...
+  for(int x=0; x<aslfatoTexturePixels[0].length; x++){
+   for(int y=0; y<aslfatoTexturePixels.length;y++){
+     stroke(aslfatoTexturePixels[y][x]);
+     point(x+ORIGEM_TELA.x, -y+ORIGEM_TELA.y + displayHeight);
+   }    
+  }
+  */
+  
+  rectMode(CORNER);
+  fill(80);
+  rect(ORIGEM_TELA.x, ORIGEM_TELA.y + displayHeight, displayWidth, -fundo.height*0.30);
+  
+}
+  
 
 void desenhaPredios(){
   imageMode(CENTER);
@@ -181,8 +197,6 @@ void repositionWindow() {
 
     ORIGEM_TELA.x += (pWindowX - get_sketch_location_x());
     ORIGEM_TELA.y += (pWindowY - get_sketch_location_y());
-    pWindowX = get_sketch_location_x(); 
-    pWindowY = get_sketch_location_y();
 
     println("\tmoving window to: "+newX+" , "+newY);
   }
@@ -194,6 +208,30 @@ void drawShootingStar(){
   if(frameCount % (FPS/sStar.length) == 0)
     frameIdx = ++frameIdx % sStar.length;
   image(sStar[frameIdx], myMouse.x, myMouse.y);
+  
+  //cauda da estrela cadente
+  noStroke();
+  for (int i=0; i<starTail.length; i++) {
+
+    if(frameCount%2==0){
+      if (i+1 < starTail.length) {
+        starTail[starTail.length-i-1] = new Point(starTail[starTail.length-i-2]);
+        starTail[starTail.length-i-1].y +=1;  //faz ela cair um pouco por frame
+      }
+    }
+
+    int shineLayers = 4;
+    for (int k=0; k < shineLayers; k++) {
+      //saturação da cor vai caindo ao longo da cauda
+      double satBase = Math.pow(1.0 - ((double)i/(double)starTail.length), 1.7);
+      double sat = satBase*(255*0.2) / (2*(k+1));
+      int size = (int)( ( (double)(50*(k+1) ) * ( (double)i/starTail.length) ) );
+
+      fill(255, 255, 0, (int)sat );
+      ellipse(starTail[i].x, starTail[i].y, size, size);
+    }
+  }
+  starTail[0] = myMouse;
 }
 
 
