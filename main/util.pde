@@ -6,7 +6,7 @@ public class Util{
     if (Character.toLowerCase(axis) == 'y') {  // Top to bottom gradient
       for (int i = y; i <= y+h; i++) {
         float inter = map(i, y, y+h, 0, 1);
-        inter = inter * (0.8 + random(1)/5.0);
+        inter = inter * random(0.8, 1.2);  //rand de +-20% na cor dá um efeito legal
         color c = lerpColor(c1, c2, inter);
         stroke(c);
         line(x, i, x+w, i);
